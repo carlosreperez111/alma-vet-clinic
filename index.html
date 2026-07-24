@@ -29,78 +29,16 @@
   </style>
   <script>
     (function(){
-      // URL correcta del webhook n8n
       var WEBHOOK_URL='https://carlosreee.app.n8n.cloud/webhook/vet-assistant';
-      var TIMEOUT=8000; // 8 segundos de timeout
-      
+      var TIMEOUT=8000;
       var sessionId=localStorage.getItem('almavet_chat_session')||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2));
       localStorage.setItem('almavet_chat_session',sessionId);
-      
       var root=document.getElementById('almavet-chat');
       root.innerHTML='<button id="av-bubble" aria-label="Abrir el asistente virtual">💬</button><section id="av-panel" aria-label="Asistente virtual Alma Vet"><div id="av-head">Alma Vet<small>Asistente virtual · Madrid</small></div><div id="av-msgs" aria-live="polite"></div><form id="av-form"><input id="av-input" maxlength="800" autocomplete="off" placeholder="Escribe tu mensaje..." aria-label="Mensaje"><button id="av-send" type="submit">Enviar</button></form></section>';
-      
       var panel=document.getElementById('av-panel'),msgs=document.getElementById('av-msgs'),form=document.getElementById('av-form'),input=document.getElementById('av-input'),send=document.getElementById('av-send');
-      
-      function add(text,role){
-        var el=document.createElement('div');
-        el.className='av-m av-'+role;
-        el.textContent=text;
-        msgs.appendChild(el);
-        msgs.scrollTop=msgs.scrollHeight;
-        return el;
-      }
-      
-      document.getElementById('av-bubble').onclick=function(){
-        panel.classList.toggle('open');
-        if(panel.classList.contains('open')&&!msgs.hasChildNodes()){
-          add('¡Hola! Soy el asistente de Alma Vet. Puedo ayudarte con citas, horarios y servicios.','bot');
-          add('Si tu mascota está en peligro o es una urgencia, llama a la clínica o acude a urgencias.','alert');
-          input.focus();
-        }
-      };
-      
-      form.onsubmit=async function(e){
-        e.preventDefault();
-        var text=input.value.trim();
-        if(!text||send.disabled)return;
-        
-        add(text,'user');
-        input.value='';
-        send.disabled=true;
-        var loading=add('Escribiendo…','bot');
-        
-        try{
-          // Crear AbortController para timeout
-          var controller=new AbortController();
-          var timeoutId=setTimeout(function(){controller.abort()},TIMEOUT);
-          
-          var response=await fetch(WEBHOOK_URL,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({message:text,sessionId:sessionId,channel:'web'}),
-            signal:controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if(!response.ok){
-            throw new Error('Error HTTP: '+response.status);
-          }
-          
-          var data=await response.json();
-          loading.textContent=(data&&(data.reply||data.output||data.message))||'No he podido procesar tu mensaje. Contacta con recepción.';
-        }catch(err){
-          if(err.name==='AbortError'){
-            loading.textContent='Tardó demasiado. Inténtalo de nuevo o contacta con recepción.';
-          }else{
-            loading.textContent='No se ha podido conectar. Inténtalo de nuevo o contacta con recepción.';
-          }
-          console.error('Error en asistente:',err);
-        }finally{
-          send.disabled=false;
-          input.focus();
-        }
-      };
+      function add(text,role){var el=document.createElement('div');el.className='av-m av-'+role;el.textContent=text;msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;return el;}
+      document.getElementById('av-bubble').onclick=function(){panel.classList.toggle('open');if(panel.classList.contains('open')&&!msgs.hasChildNodes()){add('¡Hola! Soy el asistente de Alma Vet. Puedo ayudarte con citas, horarios y servicios.','bot');add('Si tu mascota está en peligro o es una urgencia, llama a la clínica o acude a urgencias.','alert');input.focus();}};
+      form.onsubmit=async function(e){e.preventDefault();var text=input.value.trim();if(!text||send.disabled)return;add(text,'user');input.value='';send.disabled=true;var loading=add('Escribiendo…','bot');try{var controller=new AbortController();var timeoutId=setTimeout(function(){controller.abort()},TIMEOUT);var response=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,sessionId:sessionId,channel:'web'}),signal:controller.signal});clearTimeout(timeoutId);if(!response.ok){throw new Error('HTTP '+response.status);}var data=await response.json();loading.textContent=(data&&(data.reply||data.output||data.message))||'No he podido procesar tu mensaje. Contacta con recepción.';}catch(err){if(err.name==='AbortError'){loading.textContent='Tardó demasiado. Inténtalo de nuevo o contacta con recepción.';}else{loading.textContent='No se ha podido conectar. Inténtalo de nuevo o contacta con recepción.';}console.error('Error:',err.message);}finally{send.disabled=false;input.focus();}};
     })();
   </script>
 </body></html>
